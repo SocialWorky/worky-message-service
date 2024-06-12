@@ -1,25 +1,36 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
 import { MessagesService } from './messages.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { Request } from 'express';
 
 @Controller('messages')
 export class MessagesController {
-  constructor(private readonly messagesService: MessagesService) {}
+  constructor(
+    private readonly messagesService: MessagesService
+  ) {}
 
+  @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() createMessageDto: CreateMessageDto) {
-    return this.messagesService.create(createMessageDto);
+  async create(
+    @Body() createMessageDto: CreateMessageDto, 
+    @Req() req: Request
+  ) {
+    const message = await this.messagesService.create(createMessageDto);
+    return message;
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get()
   findAll() {
     return this.messagesService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.messagesService.findOne(+id);
+  @UseGuards(JwtAuthGuard)
+  @Get('user/:id')
+  findByUserId(@Param('id') userId: string) {
+    return this.messagesService.findByUserId(userId);
   }
 
   @Patch(':id')
