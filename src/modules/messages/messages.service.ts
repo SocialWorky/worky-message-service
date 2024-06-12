@@ -1,18 +1,26 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { Repository } from 'typeorm';
 import { Message } from './entities/message.entity';
+import { UserValidationService } from 'src/services/user-validation.service';
 
 @Injectable()
 export class MessagesService {
   constructor(
     @InjectRepository(Message)
     private readonly messagesRepository: Repository<Message>,
+    private readonly userValidationService: UserValidationService
   ) {}
 
-  create(createMessageDto: CreateMessageDto): Promise<Message> {
+  async create(createMessageDto: CreateMessageDto): Promise<Message> {
+    const { receiverId } = createMessageDto;
+    const userExist = await this.userValidationService.validateUserExist(receiverId);
+    if (!userExist) {
+      throw new HttpException('User not found', 404);
+    }
+
     const message = this.messagesRepository.create(createMessageDto);
     return this.messagesRepository.save(message);
   }
