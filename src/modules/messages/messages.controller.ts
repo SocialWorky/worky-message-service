@@ -3,7 +3,6 @@ import { MessagesService } from './messages.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { Request } from 'express';
 import { NotificationService } from 'src/services/notification.service';
 
 @Controller('messages')
@@ -17,11 +16,13 @@ export class MessagesController {
   @Post()
   async create(
     @Body() createMessageDto: CreateMessageDto, 
-    @Req() req: Request
+    @Req() req,
   ) {
-    const message = await this.messagesService.create(createMessageDto);
-    this.notificationService.notifyNewMessage(message);
-    return message;
+      console.log("user log data: ",req.user);
+
+      const message = await this.messagesService.create(createMessageDto, req.user);
+      this.notificationService.notifyNewMessage(message);
+      return message;
   }
 
   @UseGuards(JwtAuthGuard)

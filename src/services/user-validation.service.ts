@@ -1,5 +1,6 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { HttpService } from  '@nestjs/axios'
+import { lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class UserValidationService {
@@ -7,9 +8,13 @@ export class UserValidationService {
         private readonly httpService: HttpService
     ) {}
 
-    async validateUserExist(userId: string): Promise<boolean> {
+    async validateUserExist(userIdReceiver: string, token: string): Promise<boolean> {
+        const url = `${ process.env.API_BACKEND_URL }/user/${userIdReceiver}`;
+        const headers = {
+            Authorization: `Bearer ${token}`,
+        };
         try {
-            const response = await this.httpService.get(`http://localhost:3000/users/${userId}`).toPromise();
+            const response = await lastValueFrom(this.httpService.get(url, { headers }));
             return response.status === 200;
         } catch (error) {
             if (error.response && error.response.status === 404) {

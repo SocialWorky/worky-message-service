@@ -14,9 +14,9 @@ export class MessagesService {
     private readonly userValidationService: UserValidationService
   ) {}
 
-  async create(createMessageDto: CreateMessageDto): Promise<Message> {
+  async create(createMessageDto: CreateMessageDto, user:any): Promise<Message> {
     const { receiverId } = createMessageDto;
-    const userExist = await this.userValidationService.validateUserExist(receiverId);
+    const userExist = await this.userValidationService.validateUserExist(receiverId, user.token);
     if (!userExist) {
       throw new HttpException('User not found', 404);
     }
