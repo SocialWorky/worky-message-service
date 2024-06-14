@@ -18,10 +18,9 @@ export class MessagesController {
     @Body() createMessageDto: CreateMessageDto, 
     @Req() req,
   ) {
-      console.log("user log data: ",req.user);
 
       const message = await this.messagesService.create(createMessageDto, req.user);
-      this.notificationService.notifyNewMessage(message);
+      // this.notificationService.notifyNewMessage(message);
       return message;
   }
 

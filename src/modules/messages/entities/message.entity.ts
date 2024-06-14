@@ -1,8 +1,8 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class Message {
-    @PrimaryColumn({ type: 'uuid' })
+    @PrimaryGeneratedColumn('uuid')
     _id: string;
 
     @Index()

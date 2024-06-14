@@ -21,7 +21,14 @@ export class MessagesService {
       throw new HttpException('User not found', 404);
     }
 
-    const message = this.messagesRepository.create(createMessageDto);
+    // const message = this.messagesRepository.create(createMessageDto);
+    // return this.messagesRepository.save(message);
+
+    const message = this.messagesRepository.create({
+      ...createMessageDto,
+      senderId: user.userId,
+      chatId: `${user.userId}-${receiverId}`,
+    });
     return this.messagesRepository.save(message);
   }
 
