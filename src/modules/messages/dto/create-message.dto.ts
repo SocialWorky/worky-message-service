@@ -1,4 +1,6 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsOptional } from 'class-validator';
+import { MessageStatus } from 'src/enum/message-status.enum';
+import { MessageType } from 'src/enum/message-type.enum';
 
 export class CreateMessageDto {
     @IsString()
@@ -8,5 +10,13 @@ export class CreateMessageDto {
     @IsString()
     @IsNotEmpty()
     receiverId: string;
+
+    @IsOptional()
+    @IsEnum(MessageType)
+    type?: MessageType;
+
+    @IsOptional()
+    @IsEnum(MessageStatus)
+    status?: MessageStatus;
 
 }

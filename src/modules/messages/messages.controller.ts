@@ -18,11 +18,10 @@ export class MessagesController {
     @Body() createMessageDto: CreateMessageDto, 
     @Req() req,
   ) {
-
       const message = await this.messagesService.create(createMessageDto, req.user);
-      // this.notificationService.notifyNewMessage(message);
+      this.notificationService.notifyNewMessage(message);
       return message;
-  }
+    }
 
   @UseGuards(JwtAuthGuard)
   @Get()
@@ -32,17 +31,30 @@ export class MessagesController {
 
   @UseGuards(JwtAuthGuard)
   @Get('user/:id')
-  findByUserId(@Param('id') userId: string) {
+  findByUserId(
+    @Param('id') userId: string
+    ) {
     return this.messagesService.findByUserId(userId);
   }
 
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateMessageDto: UpdateMessageDto) {
-  //   return this.messagesService.update(+id, updateMessageDto);
-  // }
+  @UseGuards(JwtAuthGuard)
+  @Patch('update/:id')
+  async update(
+    @Param('id') messageId: string, 
+    @Body() updateMessageDto: UpdateMessageDto,
+    @Req() req,
+  ) {
+    const updatedMessage = await this.messagesService.update(messageId, updateMessageDto, req.user);
+    return updatedMessage;
+  }
 
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.messagesService.remove(+id);
-  // }
+  @UseGuards(JwtAuthGuard)
+  @Delete('delete/:id')
+  async remove(
+    @Param('id') messageId: string,
+    @Req() req,
+    ){
+    await this.messagesService.remove(messageId, req.user);
+    return { message: 'Message deleted successfully'};
+  }
 }

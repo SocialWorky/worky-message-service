@@ -1,4 +1,7 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, PrimaryGeneratedColumn } from "typeorm";
+import { MessageType } from "src/enum/message-type.enum";
+import { MessageStatus } from "src/enum/message-status.enum";
+
 
 @Entity()
 export class Message {
@@ -23,11 +26,11 @@ export class Message {
     @CreateDateColumn()
     timestamp: Date;
 
-    @Column({ nullable: true })
-    type: 'text' | 'image' | 'video' | 'audio' | 'file';
+    @Column({ nullable: true, type: 'enum', enum: MessageType })
+    type: MessageType;
 
-    @Column({ nullable: true })
-    status: 'sent' | 'delivered' | 'read';
+    @Column({ nullable: true, type: 'enum', enum: MessageStatus})
+    status: MessageStatus;
 
     @Column({ default: false })
     isRead: boolean;
@@ -37,4 +40,7 @@ export class Message {
 
     @Column({ default: false })
     isDeleted: boolean;
+
+    @DeleteDateColumn({ type: 'timestamptz' })
+    deletedAt: Date;
 }
