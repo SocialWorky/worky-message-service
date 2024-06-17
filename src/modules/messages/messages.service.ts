@@ -35,10 +35,19 @@ export class MessagesService {
       messageType = MessageType.TEXT;
     }
 
+    const existingMessage = await this.messagesRepository.findOne(
+      { where: [
+        { senderId: user.userId, receiverId: receiverId },
+        { senderId: receiverId, receiverId: user.userId }
+      ]}
+    );
+
+    const chatId = existingMessage ? existingMessage.chatId : uuidv4();
+
     const message = this.messagesRepository.create({
       ...createMessageDto,
       senderId: user.userId,
-      chatId: uuidv4(),
+      chatId: chatId,
       type: messageType,
       status: MessageStatus.SENT,
     });
@@ -52,7 +61,17 @@ export class MessagesService {
 
   findByUserId(userId: string): Promise<Message[]> {
     return this.messagesRepository.find({
-      where: [{ senderId: userId }, { receiverId: userId }],
+      where: [
+      { senderId: userId },
+      { receiverId: userId }
+      ],      
+    });
+  }
+
+  findByChatId(chatId: string): Promise<Message[]> {
+    return this.messagesRepository.find({
+      where: { chatId },
+      order: { timestamp: 'ASC' }
     });
   }
 
