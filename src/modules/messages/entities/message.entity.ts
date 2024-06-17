@@ -20,6 +20,7 @@ export class Message {
     @Column()
     chatId: string;
 
+    @Index()
     @Column()
     content: string;
 
