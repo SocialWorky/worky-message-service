@@ -38,6 +38,14 @@ export class MessagesController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('chat/:chatId')
+  findByChatId(
+    @Param('chatId') chatId: string
+    ) {
+    return this.messagesService.findByChatId(chatId);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Patch('update/:id')
   async update(
     @Param('id') messageId: string, 
