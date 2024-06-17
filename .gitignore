@@ -2,6 +2,8 @@
 /dist
 /node_modules
 /build
+/pgadmin-data
+/postgres-messageDB
 
 # Logs
 logs
