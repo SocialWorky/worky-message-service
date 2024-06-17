@@ -2,12 +2,13 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
-import { Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { Message } from './entities/message.entity';
 import { UserValidationService } from 'src/services/user-validation.service';
 import { MessageType } from 'src/enum/message-type.enum';
 import { MessageStatus } from 'src/enum/message-status.enum';
+import { SearchMessagesDto } from './dto/search-message.dto';
 
 @Injectable()
 export class MessagesService {
@@ -52,15 +53,11 @@ export class MessagesService {
       status: MessageStatus.SENT,
     });
 
-    return this.messagesRepository.save(message);
+    return  await this.messagesRepository.save(message);
   }
 
-  findAll(): Promise<Message[]> {
-    return this.messagesRepository.find();
-  }
-
-  findByUserId(userId: string): Promise<Message[]> {
-    return this.messagesRepository.find({
+  async findByUserId(userId: string): Promise<Message[]> {
+    return await this.messagesRepository.find({
       where: [
       { senderId: userId },
       { receiverId: userId }
@@ -68,15 +65,14 @@ export class MessagesService {
     });
   }
 
-  findByChatId(chatId: string): Promise<Message[]> {
-    return this.messagesRepository.find({
+  async findByChatId(chatId: string, page: number = 1, pageSize: number = 10): Promise<Message[]> {
+    const skip = (page - 1) * pageSize;
+    return  await this.messagesRepository.find({
       where: { chatId },
-      order: { timestamp: 'ASC' }
+      order: { timestamp: 'ASC' },
+      skip,
+      take: pageSize,
     });
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} message`;
   }
 
   async update(messageId: string, updateMessageDto: UpdateMessageDto, user: any): Promise<Message> {
@@ -95,7 +91,7 @@ export class MessagesService {
       isEdited: true,
     };
 
-    return this.messagesRepository.save(updatedMessage);
+    return  await this.messagesRepository.save(updatedMessage);
   }
 
   async remove(messageId: string, user: any): Promise<void> {
@@ -111,5 +107,38 @@ export class MessagesService {
     message.isDeleted = true;
     message.deletedAt = new Date();
     await this.messagesRepository.save(message);
+  }
+
+  async markAsRead(chatId: string, user: any): Promise<Message[]> {
+    const messagesToUpdate = await this.messagesRepository.find({
+      where: { chatId, receiverId: user.userId, isRead: false },
+    });
+
+    if (messagesToUpdate.length === 0) {
+      return [];
+    }
+    messagesToUpdate.forEach(message => {
+      message.status = MessageStatus.READ;
+      message.isRead = true;
+    });
+
+    return await this.messagesRepository.save(messagesToUpdate);
+  }
+  
+
+  async searchMessages(searchMessageDto: SearchMessagesDto, user: any): Promise<{ messages: Message[], total: number }> {
+    const { query, page = 1, pageSize = 10 } = searchMessageDto; 
+
+    const [messages, total] = await this.messagesRepository.findAndCount({
+      where: [
+        { senderId: user.userId, content: Like(`%${query}%`) },
+        { receiverId: user.userId, content: Like(`%${query}%`) },
+      ],
+      order: { timestamp: 'ASC' },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    });
+
+    return { messages, total };
   }
 }

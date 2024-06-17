@@ -1,10 +1,11 @@
-import { IsString, IsNotEmpty, IsEnum, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsOptional, Max, MaxLength, IsNumber, Min } from 'class-validator';
 import { MessageStatus } from 'src/enum/message-status.enum';
 import { MessageType } from 'src/enum/message-type.enum';
 
 export class CreateMessageDto {
     @IsString()
-    @IsNotEmpty()    
+    @IsNotEmpty()  
+    @MaxLength(500)
     content: string;
     
     @IsString()
@@ -18,5 +19,4 @@ export class CreateMessageDto {
     @IsOptional()
     @IsEnum(MessageStatus)
     status?: MessageStatus;
-
 }
