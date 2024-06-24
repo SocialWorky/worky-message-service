@@ -160,4 +160,10 @@ export class MessagesService {
 
     return { messages, total };
   }
+
+  async findUserMessages(user: any): Promise<Message[]> {
+    return await this.messagesRepository.find({
+      where: { receiverId: user.userId, isRead: false || true },
+    });
+  }
 }

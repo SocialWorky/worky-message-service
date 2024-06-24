@@ -92,4 +92,10 @@ export class MessagesController {
     const searchMessageDto: SearchMessagesDto = { query, page, pageSize };
     return this.messagesService.searchMessages(searchMessageDto, user);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('unread-count')
+  async findUserMessages(@Query('userId') userId: string) {
+    return this.messagesService.findUserMessages(userId);
+  }
 }
