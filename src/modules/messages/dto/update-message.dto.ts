@@ -5,14 +5,13 @@ import { MessageType } from 'src/enum/message-type.enum';
 import { MessageStatus } from 'src/enum/message-status.enum';
 
 export class UpdateMessageDto extends PartialType(CreateMessageDto) {
-    @IsString()
-    @IsOptional()
-    content?: string;
+  @IsString()
+  @IsOptional()
+  content?: string;
 
-    @IsOptional()
-    type?: MessageType;
+  @IsOptional()
+  type?: MessageType;
 
-    @IsOptional()
-    status?: MessageStatus;
-
+  @IsOptional()
+  status?: MessageStatus;
 }

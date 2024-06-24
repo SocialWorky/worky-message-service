@@ -15,12 +15,18 @@ export class MessagesService {
   constructor(
     @InjectRepository(Message)
     private readonly messagesRepository: Repository<Message>,
-    private readonly userValidationService: UserValidationService
+    private readonly userValidationService: UserValidationService,
   ) {}
 
-  async create(createMessageDto: CreateMessageDto, user:any): Promise<Message> {
+  async create(
+    createMessageDto: CreateMessageDto,
+    user: any,
+  ): Promise<Message> {
     const { receiverId } = createMessageDto;
-    const userExist = await this.userValidationService.validateUserExist(receiverId, user.token);
+    const userExist = await this.userValidationService.validateUserExist(
+      receiverId,
+      user.token,
+    );
     if (!userExist) {
       throw new HttpException('User not found', 404);
     }
@@ -28,20 +34,26 @@ export class MessagesService {
     let messageType: MessageType;
     if (createMessageDto.type) {
       messageType = createMessageDto.type;
-    } else if (createMessageDto.content.startsWith('http') && createMessageDto.content.match(/\.(jpeg|jpg|gif|png)$/)) {
+    } else if (
+      createMessageDto.content.startsWith('http') &&
+      createMessageDto.content.match(/\.(jpeg|jpg|gif|png)$/)
+    ) {
       messageType = MessageType.IMAGE;
-    } else if (createMessageDto.content.startsWith('http') && createMessageDto.content.match(/\.(mp4|avi|mov)$/)) {
+    } else if (
+      createMessageDto.content.startsWith('http') &&
+      createMessageDto.content.match(/\.(mp4|avi|mov)$/)
+    ) {
       messageType = MessageType.VIDEO;
     } else {
       messageType = MessageType.TEXT;
     }
 
-    const existingMessage = await this.messagesRepository.findOne(
-      { where: [
+    const existingMessage = await this.messagesRepository.findOne({
+      where: [
         { senderId: user.userId, receiverId: receiverId },
-        { senderId: receiverId, receiverId: user.userId }
-      ]}
-    );
+        { senderId: receiverId, receiverId: user.userId },
+      ],
+    });
 
     const chatId = existingMessage ? existingMessage.chatId : uuidv4();
 
@@ -53,21 +65,22 @@ export class MessagesService {
       status: MessageStatus.SENT,
     });
 
-    return  await this.messagesRepository.save(message);
+    return await this.messagesRepository.save(message);
   }
 
   async findByUserId(userId: string): Promise<Message[]> {
     return await this.messagesRepository.find({
-      where: [
-      { senderId: userId },
-      { receiverId: userId }
-      ],      
+      where: [{ senderId: userId }, { receiverId: userId }],
     });
   }
 
-  async findByChatId(chatId: string, page: number = 1, pageSize: number = 10): Promise<Message[]> {
+  async findByChatId(
+    chatId: string,
+    page: number = 1,
+    pageSize: number = 10,
+  ): Promise<Message[]> {
     const skip = (page - 1) * pageSize;
-    return  await this.messagesRepository.find({
+    return await this.messagesRepository.find({
       where: { chatId },
       order: { timestamp: 'ASC' },
       skip,
@@ -75,7 +88,11 @@ export class MessagesService {
     });
   }
 
-  async update(messageId: string, updateMessageDto: UpdateMessageDto, user: any): Promise<Message> {
+  async update(
+    messageId: string,
+    updateMessageDto: UpdateMessageDto,
+    user: any,
+  ): Promise<Message> {
     const message = await this.messagesRepository.findOneBy({ _id: messageId });
     if (!message) {
       throw new HttpException('Message not found', 404);
@@ -84,14 +101,14 @@ export class MessagesService {
     if (message.senderId !== user.userId) {
       throw new HttpException('You are not the sender of this message', 403);
     }
-    
+
     const updatedMessage = {
       ...message,
       ...updateMessageDto,
       isEdited: true,
     };
 
-    return  await this.messagesRepository.save(updatedMessage);
+    return await this.messagesRepository.save(updatedMessage);
   }
 
   async remove(messageId: string, user: any): Promise<void> {
@@ -117,17 +134,19 @@ export class MessagesService {
     if (messagesToUpdate.length === 0) {
       return [];
     }
-    messagesToUpdate.forEach(message => {
+    messagesToUpdate.forEach((message) => {
       message.status = MessageStatus.READ;
       message.isRead = true;
     });
 
     return await this.messagesRepository.save(messagesToUpdate);
   }
-  
 
-  async searchMessages(searchMessageDto: SearchMessagesDto, user: any): Promise<{ messages: Message[], total: number }> {
-    const { query, page = 1, pageSize = 10 } = searchMessageDto; 
+  async searchMessages(
+    searchMessageDto: SearchMessagesDto,
+    user: any,
+  ): Promise<{ messages: Message[]; total: number }> {
+    const { query, page = 1, pageSize = 10 } = searchMessageDto;
 
     const [messages, total] = await this.messagesRepository.findAndCount({
       where: [

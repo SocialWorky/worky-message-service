@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 require('dotenv').config();
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
@@ -30,11 +31,11 @@ import { AuthModule } from './auth/auth.module';
                 rejectUnauthorized: false,
               }
             : null,
-      },  
+      },
     }),
-    MessagesModule, 
-    AuthModule     
-    ],
+    MessagesModule,
+    AuthModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -1,5 +1,5 @@
 import { HttpService } from '@nestjs/axios';
-import { Injectable} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { Message } from 'src/modules/messages/entities/message.entity';
 
@@ -26,7 +26,9 @@ export class NotificationService {
     };
 
     try {
-      const response = await firstValueFrom(this.httpService.post(notificationServiceUrl, payload));
+      const response = await firstValueFrom(
+        this.httpService.post(notificationServiceUrl, payload),
+      );
       console.log('Notification sent successfully:', response.data);
     } catch (error) {
       console.error('Error sending notification:', error);
