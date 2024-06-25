@@ -167,7 +167,7 @@ export class MessagesService {
     });
 
     const userIds = usersMessages.map((dataUser) =>
-      dataUser.receiverId === userId ? dataUser.receiverId : dataUser.senderId,
+      dataUser.receiverId === userId ? dataUser.senderId : dataUser.receiverId,
     );
 
     return userIds;
