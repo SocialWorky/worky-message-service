@@ -161,9 +161,15 @@ export class MessagesService {
     return { messages, total };
   }
 
-  async findUserMessages(user: any): Promise<Message[]> {
-    return await this.messagesRepository.find({
-      where: { receiverId: user.userId, isRead: false || true },
+  async findUserMessages(userId: any): Promise<string[]> {
+    const usersMessages = await this.messagesRepository.find({
+      where: [{ receiverId: userId }, { senderId: userId }],
     });
+
+    const userIds = usersMessages.map((dataUser) =>
+      dataUser.receiverId === userId ? dataUser.senderId : dataUser.receiverId,
+    );
+
+    return userIds;
   }
 }

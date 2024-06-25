@@ -94,8 +94,8 @@ export class MessagesController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('unread-count')
-  async findUserMessages(@Query('userId') userId: string) {
-    return this.messagesService.findUserMessages(userId);
+  @Get('userformessage/:userId')
+  async findUserMessages(@Param('userId') userId: string) {
+    return await this.messagesService.findUserMessages(userId);
   }
 }
