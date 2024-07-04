@@ -17,6 +17,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_DATABASE: ${DB_DATABASE}
       DB_SSL: ${DB_SSL}
+      JWT_SECRET: ${JWT_SECRET}
+      API_BACKEND_URL: ${API_BACKEND_URL}
     dns:
       - 1.1.1.1
   db:
