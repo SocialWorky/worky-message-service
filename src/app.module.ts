@@ -36,6 +36,7 @@ import * as cors from 'cors';
     }),
     MessagesModule,
     AuthModule,
+    ConfigModule.forRoot({ isGlobal: true }),
   ],
   controllers: [AppController],
   providers: [AppService],

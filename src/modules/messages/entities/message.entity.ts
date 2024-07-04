@@ -5,6 +5,7 @@ import {
   Entity,
   Index,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { MessageType } from 'src/enum/message-type.enum';
 import { MessageStatus } from 'src/enum/message-status.enum';
@@ -30,7 +31,7 @@ export class Message {
   @Column()
   content: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   timestamp: Date;
 
   @Column({ nullable: true, type: 'enum', enum: MessageType })
@@ -50,4 +51,7 @@ export class Message {
 
   @DeleteDateColumn({ type: 'timestamptz' })
   deletedAt: Date;
+
+  @UpdateDateColumn({ type: 'timestamptz' })
+  updatedAt: Date;
 }

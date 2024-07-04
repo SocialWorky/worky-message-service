@@ -1,14 +1,15 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { Injectable, HttpException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CreateMessageDto } from './dto/create-message.dto';
-import { UpdateMessageDto } from './dto/update-message.dto';
-import { Like, Repository } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { Message } from './entities/message.entity';
 import { UserValidationService } from 'src/services/user-validation.service';
+import { CreateMessageDto } from './dto/create-message.dto';
+import { UpdateMessageDto } from './dto/update-message.dto';
+import { SearchMessagesByDateDto } from './dto/search-messages-by-date.dto';
 import { MessageType } from 'src/enum/message-type.enum';
 import { MessageStatus } from 'src/enum/message-status.enum';
-import { SearchMessagesDto } from './dto/search-message.dto';
+import { TimeService } from 'src/services/time.service';
 
 @Injectable()
 export class MessagesService {
@@ -16,6 +17,7 @@ export class MessagesService {
     @InjectRepository(Message)
     private readonly messagesRepository: Repository<Message>,
     private readonly userValidationService: UserValidationService,
+    private readonly timeService: TimeService,
   ) {}
 
   async create(
@@ -62,30 +64,106 @@ export class MessagesService {
       senderId: user.userId,
       chatId: chatId,
       type: messageType,
+      timestamp: this.timeService.getLocalTime(new Date()),
       status: MessageStatus.SENT,
     });
 
     return await this.messagesRepository.save(message);
   }
 
-  async findByUserId(userId: string): Promise<Message[]> {
-    return await this.messagesRepository.find({
+  async findUsersWithConversations(userId: string): Promise<string[]> {
+    const messages = await this.messagesRepository.find({
       where: [{ senderId: userId }, { receiverId: userId }],
+      select: ['senderId', 'receiverId'],
+    });
+
+    const userIds = new Set<string>();
+    messages.forEach((message) => {
+      if (message.senderId !== userId) {
+        userIds.add(message.senderId);
+      }
+      if (message.receiverId !== userId) {
+        userIds.add(message.receiverId);
+      }
+    });
+    const filteredUserIds = Array.from(userIds).filter((id) => id !== userId);
+
+    return filteredUserIds;
+  }
+
+  async findConversationsWithUser(
+    userId: string,
+    otherUserId: string,
+  ): Promise<Message[]> {
+    return await this.messagesRepository.find({
+      where: [
+        { senderId: userId, receiverId: otherUserId },
+        { senderId: otherUserId, receiverId: userId },
+      ],
+      order: { timestamp: 'ASC' },
     });
   }
 
-  async findByChatId(
-    chatId: string,
-    page: number = 1,
-    pageSize: number = 10,
-  ): Promise<Message[]> {
-    const skip = (page - 1) * pageSize;
-    return await this.messagesRepository.find({
-      where: { chatId },
-      order: { timestamp: 'ASC' },
-      skip,
-      take: pageSize,
+  async findLastConversationWithUser(
+    userId: string,
+    otherUserId: string,
+  ): Promise<Message> {
+    return await this.messagesRepository.findOne({
+      where: [
+        { senderId: userId, receiverId: otherUserId },
+        { senderId: otherUserId, receiverId: userId },
+      ],
+      order: { timestamp: 'DESC' },
     });
+  }
+
+  async countConversationsWithUser(
+    userId: string,
+    otherUserId: string,
+  ): Promise<number> {
+    return await this.messagesRepository.count({
+      where: [
+        { senderId: userId, receiverId: otherUserId },
+        { senderId: otherUserId, receiverId: userId },
+      ],
+    });
+  }
+
+  async findConversationsByDate(
+    userId: string,
+    searchMessagesByDateDto: SearchMessagesByDateDto,
+  ): Promise<Message[]> {
+    const { startDate, endDate } = searchMessagesByDateDto;
+    const start = new Date(startDate.split('/').reverse().join('-'));
+    const end = new Date(endDate.split('/').reverse().join('-'));
+    return await this.messagesRepository.find({
+      where: [
+        { senderId: userId, timestamp: Between(start, end) },
+        { receiverId: userId, timestamp: Between(start, end) },
+      ],
+      order: { timestamp: 'DESC' },
+    });
+  }
+
+  async updateMessageStatus(
+    messageId: string,
+    userId: string,
+    isRead: boolean,
+  ): Promise<Message> {
+    const message = await this.messagesRepository.findOne({
+      where: { _id: messageId },
+    });
+    if (!message) {
+      throw new HttpException('Message not found', 404);
+    }
+    if (message.receiverId !== userId) {
+      throw new HttpException('Unauthorized', 403);
+    }
+    message.isRead = isRead;
+    if (isRead) {
+      message.status = MessageStatus.READ;
+    }
+    return await this.messagesRepository.save(message);
   }
 
   async update(
@@ -93,7 +171,9 @@ export class MessagesService {
     updateMessageDto: UpdateMessageDto,
     user: any,
   ): Promise<Message> {
-    const message = await this.messagesRepository.findOneBy({ _id: messageId });
+    const message = await this.messagesRepository.findOne({
+      where: { _id: messageId },
+    });
     if (!message) {
       throw new HttpException('Message not found', 404);
     }
@@ -112,7 +192,9 @@ export class MessagesService {
   }
 
   async remove(messageId: string, user: any): Promise<void> {
-    const message = await this.messagesRepository.findOneBy({ _id: messageId });
+    const message = await this.messagesRepository.findOne({
+      where: { _id: messageId },
+    });
     if (!message) {
       throw new HttpException('Message not found', 404);
     }
@@ -126,50 +208,22 @@ export class MessagesService {
     await this.messagesRepository.save(message);
   }
 
-  async markAsRead(chatId: string, user: any): Promise<Message[]> {
+  async markMessagesAsRead(
+    chatId: string,
+    senderId: string,
+  ): Promise<Message[]> {
     const messagesToUpdate = await this.messagesRepository.find({
-      where: { chatId, receiverId: user.userId, isRead: false },
+      where: { chatId, senderId, isRead: false },
     });
 
-    if (messagesToUpdate.length === 0) {
-      return [];
-    }
-    messagesToUpdate.forEach((message) => {
-      message.status = MessageStatus.READ;
-      message.isRead = true;
-    });
-
-    return await this.messagesRepository.save(messagesToUpdate);
-  }
-
-  async searchMessages(
-    searchMessageDto: SearchMessagesDto,
-    user: any,
-  ): Promise<{ messages: Message[]; total: number }> {
-    const { query, page = 1, pageSize = 10 } = searchMessageDto;
-
-    const [messages, total] = await this.messagesRepository.findAndCount({
-      where: [
-        { senderId: user.userId, content: Like(`%${query}%`) },
-        { receiverId: user.userId, content: Like(`%${query}%`) },
-      ],
-      order: { timestamp: 'ASC' },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    });
-
-    return { messages, total };
-  }
-
-  async findUserMessages(userId: any): Promise<string[]> {
-    const usersMessages = await this.messagesRepository.find({
-      where: [{ receiverId: userId }, { senderId: userId }],
-    });
-
-    const userIds = usersMessages.map((dataUser) =>
-      dataUser.receiverId === userId ? dataUser.senderId : dataUser.receiverId,
+    await this.messagesRepository.update(
+      { chatId, senderId, isRead: false },
+      { isRead: true },
     );
 
-    return userIds;
+    return messagesToUpdate.map((message) => {
+      message.isRead = true;
+      return message;
+    });
   }
 }

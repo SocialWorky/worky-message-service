@@ -2,100 +2,128 @@ import {
   Controller,
   Get,
   Post,
-  Body,
-  Patch,
-  Param,
+  Put,
   Delete,
-  UseGuards,
+  Param,
+  Body,
   Query,
   Req,
-  ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { MessagesService } from './messages.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
+import { SearchMessagesByDateDto } from './dto/search-messages-by-date.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { NotificationService } from 'src/services/notification.service';
-import { SearchMessagesDto } from './dto/search-message.dto';
+import { Message } from './entities/message.entity';
 
 @Controller('messages')
 export class MessagesController {
-  constructor(
-    private readonly messagesService: MessagesService,
-    private readonly notificationService: NotificationService,
-  ) {}
+  constructor(private readonly messagesService: MessagesService) {}
 
   @UseGuards(JwtAuthGuard)
-  @Post('create')
-  async create(@Body() createMessageDto: CreateMessageDto, @Req() req) {
-    const message = await this.messagesService.create(
-      createMessageDto,
-      req.user,
+  @Post()
+  async create(@Body() createMessageDto: CreateMessageDto, @Req() req: any) {
+    return await this.messagesService.create(createMessageDto, req.user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('users')
+  async findUsersWithConversations(@Req() req: any) {
+    return await this.messagesService.findUsersWithConversations(
+      req.user.userId,
     );
-    this.notificationService.notifyNewMessage(message);
-    return message;
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('user/:id')
-  findByUserId(@Param('id') userId: string) {
-    return this.messagesService.findByUserId(userId);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get('chat/:chatId')
-  findByChatId(@Param('chatId') chatId: string) {
-    return this.messagesService.findByChatId(chatId);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Patch('update/:id')
-  async update(
-    @Param('id') messageId: string,
-    @Body() updateMessageDto: UpdateMessageDto,
-    @Req() req,
+  @Get('conversations/:otherUserId')
+  async findConversationsWithUser(
+    @Param('otherUserId') otherUserId: string,
+    @Req() req: any,
   ) {
-    const updatedMessage = await this.messagesService.update(
+    return await this.messagesService.findConversationsWithUser(
+      req.user.userId,
+      otherUserId,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('conversations/:otherUserId/last')
+  async findLastConversationWithUser(
+    @Param('otherUserId') otherUserId: string,
+    @Req() req: any,
+  ) {
+    return await this.messagesService.findLastConversationWithUser(
+      req.user.userId,
+      otherUserId,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('conversations/:otherUserId/count')
+  async countConversationsWithUser(
+    @Param('otherUserId') otherUserId: string,
+    @Req() req: any,
+  ) {
+    return await this.messagesService.countConversationsWithUser(
+      req.user.id,
+      otherUserId,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('conversations/date')
+  async findConversationsByDate(
+    @Query() searchMessagesByDateDto: SearchMessagesByDateDto,
+    @Req() req: any,
+  ) {
+    return await this.messagesService.findConversationsByDate(
+      req.user.userId,
+      searchMessagesByDateDto,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put(':messageId/read')
+  async updateMessageStatus(
+    @Param('messageId') messageId: string,
+    @Req() req: any,
+  ) {
+    return await this.messagesService.updateMessageStatus(
+      messageId,
+      req.user.userId,
+      true,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put(':messageId')
+  async update(
+    @Param('messageId') messageId: string,
+    @Body() updateMessageDto: UpdateMessageDto,
+    @Req() req: any,
+  ) {
+    return await this.messagesService.update(
       messageId,
       updateMessageDto,
-      req.user,
+      req.user.userId,
     );
-    return updatedMessage;
   }
 
   @UseGuards(JwtAuthGuard)
-  @Delete('delete/:id')
-  async remove(@Param('id') messageId: string, @Req() req) {
-    await this.messagesService.remove(messageId, req.user);
-    return { message: 'Message deleted successfully' };
+  @Delete(':messageId')
+  async remove(@Param('messageId') messageId: string, @Req() req: any) {
+    return await this.messagesService.remove(messageId, req.user);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Patch('mark-read/:chatId')
-  async markAsRead(@Param('chatId') chatId: string, @Req() req) {
-    const updatedMessage = await this.messagesService.markAsRead(
-      chatId,
-      req.user,
+  @Post('mark-as-read')
+  async markMessagesAsRead(
+    @Body() body: { chatId: string; senderId: string },
+  ): Promise<Message[]> {
+    return await this.messagesService.markMessagesAsRead(
+      body.chatId,
+      body.senderId,
     );
-    return updatedMessage;
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get('search')
-  async searchMessages(
-    @Query('query') query: string,
-    @Query('page', new ParseIntPipe()) page: number = 1,
-    @Query('pageSize', new ParseIntPipe()) pageSize: number = 10,
-    @Req() req,
-  ) {
-    const user = req.user;
-    const searchMessageDto: SearchMessagesDto = { query, page, pageSize };
-    return this.messagesService.searchMessages(searchMessageDto, user);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get('userformessage/:userId')
-  async findUserMessages(@Param('userId') userId: string) {
-    return await this.messagesService.findUserMessages(userId);
   }
 }

@@ -1,28 +1,20 @@
-import {
-  IsString,
-  IsNotEmpty,
-  IsEnum,
-  IsOptional,
-  MaxLength,
-} from 'class-validator';
-import { MessageStatus } from 'src/enum/message-status.enum';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { MessageType } from 'src/enum/message-type.enum';
 
 export class CreateMessageDto {
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(500)
-  content: string;
+  // @IsNotEmpty()
+  // @IsString()
+  // senderId: string;
 
-  @IsString()
   @IsNotEmpty()
+  @IsString()
   receiverId: string;
+
+  @IsNotEmpty()
+  @IsString()
+  content: string;
 
   @IsOptional()
   @IsEnum(MessageType)
   type?: MessageType;
-
-  @IsOptional()
-  @IsEnum(MessageStatus)
-  status?: MessageStatus;
 }

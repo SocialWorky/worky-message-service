@@ -1,17 +1,24 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateMessageDto } from './create-message.dto';
-import { IsOptional, IsString } from 'class-validator';
-import { MessageType } from 'src/enum/message-type.enum';
+import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator';
 import { MessageStatus } from 'src/enum/message-status.enum';
 
-export class UpdateMessageDto extends PartialType(CreateMessageDto) {
-  @IsString()
+export class UpdateMessageDto {
   @IsOptional()
+  @IsString()
   content?: string;
 
   @IsOptional()
-  type?: MessageType;
+  @IsEnum(MessageStatus)
+  status?: MessageStatus;
 
   @IsOptional()
-  status?: MessageStatus;
+  @IsBoolean()
+  isRead?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  isEdited?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  isDeleted?: boolean;
 }

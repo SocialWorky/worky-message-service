@@ -1,16 +1,17 @@
-import { IsOptional, IsString, IsNumber, Min } from 'class-validator';
+import { IsOptional, IsString, IsInt, Min } from 'class-validator';
 
 export class SearchMessagesDto {
+  @IsOptional()
   @IsString()
-  query: string;
+  query?: string;
 
   @IsOptional()
-  @IsNumber()
+  @IsInt()
   @Min(1)
-  page?: number;
+  page?: number = 1;
 
   @IsOptional()
-  @IsNumber()
+  @IsInt()
   @Min(1)
-  pageSize?: number;
+  pageSize?: number = 10;
 }
