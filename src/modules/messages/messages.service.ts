@@ -236,4 +236,10 @@ export class MessagesService {
       where: { receiverId: userId, senderId, isRead: false, chatId },
     });
   }
+
+  async getUnreadAllMessagesCount(userId: string): Promise<number> {
+    return this.messagesRepository.count({
+      where: { receiverId: userId, isRead: false },
+    });
+  }
 }
