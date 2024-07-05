@@ -226,4 +226,14 @@ export class MessagesService {
       return message;
     });
   }
+
+  async getUnreadMessagesCount(
+    userId: string,
+    chatId: string,
+    senderId: string,
+  ): Promise<number> {
+    return this.messagesRepository.count({
+      where: { receiverId: userId, senderId, isRead: false, chatId },
+    });
+  }
 }

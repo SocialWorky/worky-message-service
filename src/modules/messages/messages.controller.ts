@@ -126,4 +126,18 @@ export class MessagesController {
       body.senderId,
     );
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('unread-count/:messageId/:senderId')
+  async getUnreadMessagesCount(
+    @Param('messageId') messageId: string,
+    @Param('senderId') senderId: string,
+    @Req() req: any,
+  ): Promise<number> {
+    return await this.messagesService.getUnreadMessagesCount(
+      req.user.userId,
+      messageId,
+      senderId,
+    );
+  }
 }
